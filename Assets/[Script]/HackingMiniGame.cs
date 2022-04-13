@@ -20,7 +20,7 @@ public class HackingMiniGame : MonoBehaviour
         Vertical,
     }
 
-    [SerializeField] private Canvas canvs = null;
+    [SerializeField] private Canvas canvas = null;
 
     private GameState state;
     private float timer;
@@ -74,8 +74,8 @@ public class HackingMiniGame : MonoBehaviour
         timerText = transform.Find("timerText").GetComponent<TextMeshProUGUI>();
         //timerBar = transform.Find("timerBar").GetComponent<Image>();
 
-        /*cursorRectTransform = transform.Find("cursor").GetComponent<RectTransform>();
-        Cursor.visible = false;*/
+        cursorRectTransform = transform.Find("cursor").GetComponent<RectTransform>();
+        Cursor.visible = false;
     }
 
 
@@ -90,7 +90,21 @@ public class HackingMiniGame : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        cursorRectTransform.anchoredPosition = Input.mousePosition / canvas.scaleFactor;
+
+        switch (state) {
+            case GameState.WaitingToStart:
+                break;
+            case GameState.Playing:
+                timer -= Time.deltaTime;
+                timerText.text = timer.ToString("F2");
+                //timerBar.fillAmount = timer / timerMax;
+                break;
+        }
+
+        if (Input.GetKeyDown(KeyCode.T)) {
+            StartHackGame();
+        }
     } 
     
     private void StartHackGame()
@@ -236,7 +250,7 @@ public class HackingMiniGame : MonoBehaviour
                 gridSingleTransform.gameObject.SetActive(true);
                 gridSingleTransform.GetComponent<RectTransform>().anchoredPosition = new Vector2(x, -y) * gridCellSize;
                 gridSingleTransform.Find("text").GetComponent<TextMeshProUGUI>().text = grid[x, y];
-                //gridSingleTransform.GetComponent<HackingMinigameButtonUI>().Setup(this, x, y);
+                gridSingleTransform.GetComponent<CursorController>().Setup(this, x, y);
             }
         }
     }
@@ -276,18 +290,134 @@ public class HackingMiniGame : MonoBehaviour
         }
     }
 
-    public void OnClicked(int i, int i1)
+    public void OnClicked(int x, int y)
     {
-        throw new NotImplementedException();
+        //Debug.Log(x + ", " + y + ": " + grid[x, y]);
+
+        if (state == GameState.GameOver) return;
+
+        // Valid click?
+        if (IsValidClick(x, y)) {
+            state = GameState.Playing;
+
+            AddToBuffer(grid[x, y]);
+
+            if (actionType == ActionType.Horizontal) {
+                actionType = ActionType.Vertical;
+                actionRowColIndex = x;
+            } else {
+                actionType = ActionType.Horizontal;
+                actionRowColIndex = y;
+            }
+            RepositionHorizontalVerticalTransforms();
+
+            grid[x, y] = "[  ]";
+            PrintGrid();
+            PrintBuffer();
+            TestWinSequence();
+        }
     }
 
-    public void OnGridOver(int i, int i1)
+    private void TestWinSequence()
     {
-        throw new NotImplementedException();
+        // Test if correct sequence was inputted
+        if (bufferHexList.Count >= correctSequence.Count) {
+            // Buffer has at least the same number of elements as sequence
+            if (bufferHexList.Contains(correctSequence[correctSequence.Count - 1])) {
+                // Buffer contains last sequence
+                int bufferLastIndex = bufferHexList.LastIndexOf(correctSequence[correctSequence.Count - 1]);
+
+                bool correct = true;
+                for (int i = 0; i < correctSequence.Count; i++) {
+                    if (bufferLastIndex - i < 0) {
+                        correct = false;
+                        break;
+                    }
+                    if (correctSequence[correctSequence.Count - 1 - i] != bufferHexList[bufferLastIndex - i]) {
+                        // Does not match!
+                        correct = false;
+                        break;
+                    }
+                }
+
+                if (correct) {
+                    // All correct!
+                    Debug.Log("Correct!");
+                    //topTransform.gameObject.SetActive(true);
+                    state = GameState.GameOver;
+                } else {
+                    // Not correct
+                    // Keep going or is buffer full?
+                    if (IsBufferFull()) {
+                        // Game Over!
+                        Debug.Log("GameOver!");
+                        state = GameState.GameOver;
+                    } else {
+                        // Buffer not full, keep playing
+                    }
+                }
+            } else {
+                // First correct sequence hex not found in buffer!
+                // Is buffer full?
+                if (IsBufferFull()) {
+                    // Game Over!
+                    Debug.Log("GameOver!");
+                    state = GameState.GameOver;
+                } else {
+                    // Buffer not full, keep playing
+                }
+            }
+        }
     }
 
-    public void OnGridOut(int i, int i1)
+    private bool IsBufferFull()
     {
-        throw new NotImplementedException();
+        return bufferHexList.Count >= bufferSize;
+    }
+
+    private void AddToBuffer(string hex)
+    {
+        bufferHexList.Add(hex);
+    }
+
+    private bool IsValidClick(int x, int y)
+    {
+        if (grid[x, y] == "[  ]") return false; // Already clicked
+
+        switch (actionType) {
+            default:
+            case ActionType.Horizontal:
+                return y == actionRowColIndex;
+            case ActionType.Vertical:
+                return x == actionRowColIndex;
+        }
+    }
+
+    public void OnGridOver(int x, int y)
+    {
+        switch (actionType) {
+            default:
+            case ActionType.Horizontal:
+                gridVerticalTransform.gameObject.SetActive(true);
+                gridVerticalTransform.GetComponent<RectTransform>().anchoredPosition = new Vector2(x * gridCellSize, 0f);
+                break;
+            case ActionType.Vertical:
+                gridHorizontalTransform.gameObject.SetActive(true);
+                gridHorizontalTransform.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -y * gridCellSize);
+                break;
+        }
+    }
+
+    public void OnGridOut(int x, int y)
+    {
+        switch (actionType) {
+            default:
+            case ActionType.Horizontal:
+                gridVerticalTransform.gameObject.SetActive(false);
+                break;
+            case ActionType.Vertical:
+                gridHorizontalTransform.gameObject.SetActive(false);
+                break;
+        }
     }
 }
