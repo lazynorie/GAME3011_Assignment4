@@ -98,7 +98,6 @@ public class HackingMiniGame : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
         SetDifficuty(Difficulty.EASY);
         StartHackGame();
     }
@@ -187,8 +186,6 @@ public class HackingMiniGame : MonoBehaviour
                 gridHorizontalTransform.gameObject.SetActive(true);
                 gridVerticalTransform.gameObject.SetActive(false);
 
-                /*gridHorizontalTransform.GetComponent<Image>().color = colorB;
-                gridVerticalTransform.GetComponent<Image>().color = colorA;*/
                 break;
             case ActionType.Vertical:
                 gridVerticalTransform.GetComponent<RectTransform>().anchoredPosition = new Vector2(actionRowColIndex * gridCellSize, 0f);
@@ -267,7 +264,7 @@ public class HackingMiniGame : MonoBehaviour
     //to prevent softlock
     private void ForceValidSequence()
     {
-        int gridWidth = 5;
+        int gridWidth = gridWidthtoSet;
         int gridHeight = 5;
         bool isHorizontal = true;
         int lastRowCol = 0;
@@ -351,6 +348,7 @@ public class HackingMiniGame : MonoBehaviour
                 if (correct) {
                     // All correct!
                     Debug.Log("Correct!");
+                    
                     //topTransform.gameObject.SetActive(true);
                     state = GameState.GameOver;
                 } else {
