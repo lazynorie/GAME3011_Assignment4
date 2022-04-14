@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using Random = UnityEngine.Random;
+using UnityEngine.UI;
 
 public class HackingMiniGame : MonoBehaviour
 {
@@ -18,6 +19,13 @@ public class HackingMiniGame : MonoBehaviour
     {
         Horizontal,
         Vertical,
+    }
+
+    public enum Difficulty
+    {
+        EASY,
+        NORMAL,
+        HARD,
     }
 
     [SerializeField] private Canvas canvas = null;
@@ -45,6 +53,17 @@ public class HackingMiniGame : MonoBehaviour
     
     private Transform gridHorizontalTransform;
     private Transform gridVerticalTransform;
+    
+    
+    //difficulty setting
+    private int sequenceLengthToSet;
+    private int bufferSizeToSet;
+    List<string> allSequencePossibleValuesToSet;
+    private int gridWidthtoSet;
+    
+    //Main menu
+    [SerializeField]
+    private GameObject mainMenu;
 
     private void Awake()
     {
@@ -54,6 +73,7 @@ public class HackingMiniGame : MonoBehaviour
         gridSingleTemplate = gridContainer.Find("gridSingleTemplate");
         gridSingleTemplate.gameObject.SetActive(false);
 
+        
         Transform bufferContainer = transform.Find("bufferContainer");
         bufferSingleTemplate = bufferContainer.Find("bufferSingleTemplate");
         bufferSingleTemplate.gameObject.SetActive(false);
@@ -64,16 +84,12 @@ public class HackingMiniGame : MonoBehaviour
         Transform sequenceContainer = transform.Find("sequenceContainer");
         sequenceSingleTemplate = sequenceContainer.Find("sequenceSingleTemplate");
         sequenceSingleTemplate.gameObject.SetActive(false);
-
-        /*topTransform = transform.Find("top");
-        topTransform.gameObject.SetActive(false);*/
-
+        
         gridHorizontalTransform = gridContainer.Find("gridHorizontalTransform");
         gridVerticalTransform = gridContainer.Find("gridVerticalTransform");
 
         timerText = transform.Find("timerText").GetComponent<TextMeshProUGUI>();
-        //timerBar = transform.Find("timerBar").GetComponent<Image>();
-
+        
         cursorRectTransform = transform.Find("cursor").GetComponent<RectTransform>();
         Cursor.visible = false;
     }
@@ -82,6 +98,8 @@ public class HackingMiniGame : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        
+        SetDifficuty(Difficulty.EASY);
         StartHackGame();
     }
 
@@ -98,18 +116,20 @@ public class HackingMiniGame : MonoBehaviour
             case GameState.Playing:
                 timer -= Time.deltaTime;
                 timerText.text = timer.ToString("F2");
-                //timerBar.fillAmount = timer / timerMax;
                 break;
         }
 
         if (Input.GetKeyDown(KeyCode.T)) {
+            SetDifficuty(Difficulty.EASY);
             StartHackGame();
+            mainMenu.SetActive(true);
         }
     } 
     
     private void StartHackGame()
-    { 
-        List<string> allSequencePossibleValues = new List<string>() { "E9", "1C", "55", "BD" };
+    {
+        List<string> allSequencePossibleValues = allSequencePossibleValuesToSet;
+            
         List<string> sequencePossibleValues = new List<string>();
         int possibleValuesCount = 4;
         for (int i = 0; i < possibleValuesCount; i++) {
@@ -120,7 +140,7 @@ public class HackingMiniGame : MonoBehaviour
 
         // Generate correct sequence
         correctSequence = new List<string>();
-        int sequenceLength = 3;
+        int sequenceLength = sequenceLengthToSet;
         for (int i = 0; i < sequenceLength; i++) {
             correctSequence.Add(sequencePossibleValues[Random.Range(0, sequencePossibleValues.Count)]);
         }
@@ -128,19 +148,16 @@ public class HackingMiniGame : MonoBehaviour
         // Initialize
         bufferHexList = new List<string>();
         bufferSize = 5;
-
-        //topTransform.gameObject.SetActive(false);
-
+        
         state = GameState.WaitingToStart;
         timerToSet = 30f;
         timer = timerToSet;
         timerText.text = timer.ToString("F2");
-        //timerBar.fillAmount = timer / timerMax;
 
         actionRowColIndex = 0;
         actionType = ActionType.Horizontal;
 
-        int gridWidth = 5;
+        int gridWidth = gridWidthtoSet;
         int gridHeight = 5;
         grid = new string[gridWidth, gridHeight];
         gridCellSize = 42.5f;
@@ -162,12 +179,6 @@ public class HackingMiniGame : MonoBehaviour
 
     private void RepositionHorizontalVerticalTransforms()
     {
-        /*Color colorA = UtilsClass.GetColorFromString("426873");
-        colorA.a = .4f;
-
-        Color colorB = UtilsClass.GetColorFromString("98924D");
-        colorB.a = .4f;*/
-
         switch (actionType) {
             default:
             case ActionType.Horizontal:
@@ -184,9 +195,7 @@ public class HackingMiniGame : MonoBehaviour
 
                 gridHorizontalTransform.gameObject.SetActive(false);
                 gridVerticalTransform.gameObject.SetActive(true);
-
-                /*gridHorizontalTransform.GetComponent<Image>().color = colorA;
-                gridVerticalTransform.GetComponent<Image>().color = colorB;*/
+                
                 break;
         }
     }
@@ -255,6 +264,7 @@ public class HackingMiniGame : MonoBehaviour
         }
     }
 
+    //to prevent softlock
     private void ForceValidSequence()
     {
         int gridWidth = 5;
@@ -292,8 +302,6 @@ public class HackingMiniGame : MonoBehaviour
 
     public void OnClicked(int x, int y)
     {
-        //Debug.Log(x + ", " + y + ": " + grid[x, y]);
-
         if (state == GameState.GameOver) return;
 
         // Valid click?
@@ -420,4 +428,73 @@ public class HackingMiniGame : MonoBehaviour
                 break;
         }
     }
+
+    public void SetDifficuty(Difficulty difficulty)
+    {
+        switch (difficulty)
+        {
+           case Difficulty.EASY:
+               allSequencePossibleValuesToSet= new List<string>() { "E9", "1C", "55", "BD" };
+               sequenceLengthToSet = 3;
+               gridWidthtoSet = 5;
+               break;
+           case Difficulty.NORMAL:
+               allSequencePossibleValuesToSet= new List<string>() { "E9", "1C", "55", "BD", "69" };
+               sequenceLengthToSet = 4;
+               gridWidthtoSet = 6;
+               break;
+           case Difficulty.HARD:
+               allSequencePossibleValuesToSet= new List<string>() { "E9", "1C", "55", "BD", "69", "44" };
+               sequenceLengthToSet = 5;
+               gridWidthtoSet = 7;
+               break;
+           default:
+               break;
+        }
+    }
+    
+    
+    public void HandleInputData(int val)
+    {
+        /*if (val == 0)
+        {
+            
+        }
+        if (val == 1)
+        {
+            Debug.Log("NORMAL");
+            SetDifficuty(Difficulty.NORMAL);
+        }
+        if (val == 2)
+        {
+            Debug.Log("HARD");
+            SetDifficuty(Difficulty.HARD);
+        }*/
+
+        switch (val)
+        {
+            case 0:
+                Debug.Log("EASY");
+                SetDifficuty(Difficulty.EASY);
+                mainMenu.gameObject.SetActive(false);
+                StartHackGame();
+                break;
+            case 1:
+                Debug.Log("NORMAL");
+                SetDifficuty(Difficulty.NORMAL);
+                mainMenu.gameObject.SetActive(false);
+                StartHackGame();
+                break;
+            case 2:
+                Debug.Log("HARD");
+                SetDifficuty(Difficulty.HARD);
+                mainMenu.gameObject.SetActive(false);
+                StartHackGame();
+                break;
+            default:
+                break;
+                
+        }
+    }
+    
 }
