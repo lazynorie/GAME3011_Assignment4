@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Random = UnityEngine.Random;
 using UnityEngine.UI;
 
@@ -43,6 +44,13 @@ public class HackingMiniGame : MonoBehaviour
 
     private TextMeshProUGUI timerText;
     //private Image timerBar;
+    
+    
+    // Result panel elements
+    public TextMeshProUGUI resultText;
+    public TextMeshProUGUI playerScore;
+    public GameObject resultScreen;
+    
 
     private RectTransform cursorRectTransform;
     private Transform gridSingleTemplate;
@@ -98,6 +106,7 @@ public class HackingMiniGame : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        Time.timeScale = 1;
         SetDifficuty(Difficulty.EASY);
         StartHackGame();
     }
@@ -115,14 +124,19 @@ public class HackingMiniGame : MonoBehaviour
             case GameState.Playing:
                 timer -= Time.deltaTime;
                 timerText.text = timer.ToString("F2");
+
                 break;
         }
 
-        if (Input.GetKeyDown(KeyCode.T)) {
-            SetDifficuty(Difficulty.EASY);
-            StartHackGame();
-            mainMenu.SetActive(true);
+        if (timer <= 0)
+        {
+            Debug.Log("GameOver!");
+            resultText.text = "Failed!";
+            playerScore.text = calculateFinalScore().ToString("F2");
+            resultScreen.SetActive(true);
+            state = GameState.GameOver;
         }
+
     } 
     
     private void StartHackGame()
@@ -345,32 +359,46 @@ public class HackingMiniGame : MonoBehaviour
                     }
                 }
 
-                if (correct) {
-                    // All correct!
+                if (correct) 
+                {
                     Debug.Log("Correct!");
-                    
-                    //topTransform.gameObject.SetActive(true);
+                    resultText.text = "System Hacked!";
+                    playerScore.text = calculateFinalScore().ToString("F0");
+                    resultScreen.SetActive(true);
                     state = GameState.GameOver;
-                } else {
-                    // Not correct
-                    // Keep going or is buffer full?
-                    if (IsBufferFull()) {
+                } 
+                else 
+                {
+                    if (IsBufferFull()) 
+                    {
                         // Game Over!
                         Debug.Log("GameOver!");
+                        resultText.text = "Failed!";
+                        playerScore.text = calculateFinalScore().ToString("F0");
+                        resultScreen.SetActive(true);
                         state = GameState.GameOver;
-                    } else {
-                        // Buffer not full, keep playing
+                    } 
+                    else 
+                    {
+
                     }
                 }
-            } else {
-                // First correct sequence hex not found in buffer!
-                // Is buffer full?
-                if (IsBufferFull()) {
+            } 
+            else 
+            {
+                
+                if (IsBufferFull()) 
+                {
                     // Game Over!
                     Debug.Log("GameOver!");
+                    resultText.text = "Failed!";
+                    playerScore.text = calculateFinalScore().ToString("F0");
+                    resultScreen.SetActive(true);
                     state = GameState.GameOver;
-                } else {
-                    // Buffer not full, keep playing
+                } 
+                else 
+                {
+                    
                 }
             }
         }
@@ -434,17 +462,17 @@ public class HackingMiniGame : MonoBehaviour
            case Difficulty.EASY:
                allSequencePossibleValuesToSet= new List<string>() { "E9", "1C", "55", "BD" };
                sequenceLengthToSet = 3;
-               gridWidthtoSet = 5;
+               gridWidthtoSet = 7;
                break;
            case Difficulty.NORMAL:
-               allSequencePossibleValuesToSet= new List<string>() { "E9", "1C", "55", "BD", "69" };
+               allSequencePossibleValuesToSet= new List<string>() { "E9", "1C", "55", "BD", "68" };
                sequenceLengthToSet = 4;
                gridWidthtoSet = 6;
                break;
            case Difficulty.HARD:
-               allSequencePossibleValuesToSet= new List<string>() { "E9", "1C", "55", "BD", "69", "44" };
+               allSequencePossibleValuesToSet= new List<string>() { "E9", "1C", "55", "BD", "68", "SB" };
                sequenceLengthToSet = 5;
-               gridWidthtoSet = 7;
+               gridWidthtoSet = 5;
                break;
            default:
                break;
@@ -472,18 +500,20 @@ public class HackingMiniGame : MonoBehaviour
         switch (val)
         {
             case 0:
+                break;
+            case 1:
                 Debug.Log("EASY");
                 SetDifficuty(Difficulty.EASY);
                 mainMenu.gameObject.SetActive(false);
                 StartHackGame();
                 break;
-            case 1:
+            case 2:
                 Debug.Log("NORMAL");
                 SetDifficuty(Difficulty.NORMAL);
                 mainMenu.gameObject.SetActive(false);
                 StartHackGame();
                 break;
-            case 2:
+            case 3:
                 Debug.Log("HARD");
                 SetDifficuty(Difficulty.HARD);
                 mainMenu.gameObject.SetActive(false);
@@ -495,4 +525,15 @@ public class HackingMiniGame : MonoBehaviour
         }
     }
     
+    public void restartScene()
+    {
+        SceneManager.LoadScene("HackingGame");
+    }
+
+    public float calculateFinalScore()
+    {
+        float score= timer;
+        score = score / 30 * 100;
+        return score;
+    }
 }
