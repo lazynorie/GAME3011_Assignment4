@@ -1,0 +1,19 @@
+GAME3011 - Portfolio Development - Assignment 4
+************************************************
+Made by:
+Hancong Zhang   - 101234068
+Jing Yuan Cheng - 101257237
+************************************************
+This is a 2077's hacking mini game clone we made for assignment4. 
+
+For this project, there are rows and columns in the grid, and the way to hack it is to find the numbers in the grid to complete the sequence.
+
+In this project, there are three difficulties you can choose from in the main menu. 
+EASY NORMAL and HARD:
+EASY: 7X5 grid, 5 different numbers in the sequence
+NORMAL: 6X5 grid, 6 different numbers in the sequence 
+HARD: 5X5 grid, 7 different numbers in the sequence
+
+To ensure the player wouldn't get soft locked, we forced a solution into the grid.
+
+The score displayed at the winning scene reflects the skill level of the player. So it basically takes the remaining timer and divides it by 30, and takes the % as the player score. Which means a player can get a score between 0 to 100.
